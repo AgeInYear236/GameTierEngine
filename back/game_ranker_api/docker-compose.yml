@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: aiy
+      POSTGRES_PASSWORD: your_strong_password
+      POSTGRES_DB: tier_db
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      SQLALCHEMY_DATABASE_URI: postgresql://aiy:236632@db:5432/tier_db
+      JWT_SECRET_KEY: your-secret-key
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

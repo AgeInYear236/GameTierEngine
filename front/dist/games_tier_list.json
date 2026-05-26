@@ -1,0 +1,41 @@
+[
+    {
+        "game_name": "dota 2",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "Borderlands 2",
+        "criteria_scores": {
+            "Gameplay": 10.0,
+            "Graphics": 10.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 90.0,
+        "tier": "A"
+    },
+    {
+        "game_name": "Borderlands 1",
+        "criteria_scores": {
+            "Gameplay": 8.0,
+            "Graphics": 2.0,
+            "Storyline": 10.0,
+            "Music": 9.0,
+            "Hardware": 9.0
+        },
+        "personal_score": 5,
+        "calculated_score": 93.0,
+        "tier": "A"
+    }
+]

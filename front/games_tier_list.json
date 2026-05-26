@@ -1,0 +1,314 @@
+[
+    {
+        "game_name": "dota 2",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "forza horizon 6",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "minecraft",
+        "criteria_scores": {
+            "Gameplay": 10.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 80.0,
+        "tier": "A"
+    },
+    {
+        "game_name": "farcry 5",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "sea of thieves",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "terraria",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "mortal combat X",
+        "criteria_scores": {
+            "Gameplay": 10.0,
+            "Graphics": 10.0,
+            "Storyline": 10.0,
+            "Music": 10.0,
+            "Hardware": 10.0
+        },
+        "personal_score": 5,
+        "calculated_score": 120.0,
+        "tier": "S"
+    },
+    {
+        "game_name": "call of duty 1",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "lego batman",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "pragmata",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "minesweeper",
+        "criteria_scores": {
+            "Gameplay": 1.5,
+            "Graphics": 3.0,
+            "Storyline": 0.5,
+            "Music": 2.5,
+            "Hardware": 2.5
+        },
+        "personal_score": 5,
+        "calculated_score": 21.0,
+        "tier": "D"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 3.0,
+            "Graphics": 3.5,
+            "Storyline": 1.0,
+            "Music": 1.5,
+            "Hardware": 3.0
+        },
+        "personal_score": 4,
+        "calculated_score": 28.8,
+        "tier": "D"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 1.5,
+            "Graphics": 3.0,
+            "Storyline": 2.5,
+            "Music": 2.0,
+            "Hardware": 2.0
+        },
+        "personal_score": 3,
+        "calculated_score": 25.5,
+        "tier": "D"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 1.5,
+            "Graphics": 4.5,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 45.0,
+        "tier": "C"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 1.5,
+            "Graphics": 4.5,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 45.0,
+        "tier": "C"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 1.5,
+            "Graphics": 3.5,
+            "Storyline": 3.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 37.0,
+        "tier": "D"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "Dota 1",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "Dota 2",
+        "criteria_scores": {
+            "Gameplay": 5.0,
+            "Graphics": 5.0,
+            "Storyline": 5.0,
+            "Music": 5.0,
+            "Hardware": 5.0
+        },
+        "personal_score": 5,
+        "calculated_score": 60.0,
+        "tier": "B"
+    },
+    {
+        "game_name": "Borderlands 1",
+        "criteria_scores": {
+            "Gameplay": 7.5,
+            "Graphics": 3.0,
+            "Storyline": 6.5,
+            "Music": 7.0,
+            "Hardware": 7.5
+        },
+        "personal_score": 5,
+        "calculated_score": 77.2,
+        "tier": "B"
+    },
+    {
+        "game_name": "Borderlands 2",
+        "criteria_scores": {
+            "Gameplay": 10.0,
+            "Graphics": 10.0,
+            "Storyline": 10.0,
+            "Music": 10.0,
+            "Hardware": 10.0
+        },
+        "personal_score": 5,
+        "calculated_score": 120.0,
+        "tier": "S"
+    },
+    {
+        "game_name": "Borderlands 3",
+        "criteria_scores": {
+            "Gameplay": 10.0,
+            "Graphics": 8.0,
+            "Storyline": 5.0,
+            "Music": 7.0,
+            "Hardware": 2.0
+        },
+        "personal_score": 5,
+        "calculated_score": 84.5,
+        "tier": "A"
+    }
+]
