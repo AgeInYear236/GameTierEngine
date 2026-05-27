@@ -1,3 +1,4 @@
+<img width="1280" height="720" alt="photo_2026-05-27_21-24-06" src="https://github.com/user-attachments/assets/3ae0e66d-a92e-46af-a2b3-3a18666cf951" />
 # Game Evaluation & Tier List Hub
 
 A centralized graphical launcher and control panel designed to evaluate video games and visualize them on a sleek, interactive tier list board. By consolidating separate modules into a unified Tkinter codebase using tk.Toplevel windows, the entire suite runs within a single process and compiles effortlessly into a single executable file (.exe or Linux binary).
