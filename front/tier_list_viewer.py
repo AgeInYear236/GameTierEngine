@@ -18,22 +18,17 @@ if len(sys.argv) > 1:
 # --- Configuration & Path Routing ---
 DATA_FILE = "games_tier_list.json"
 
-# DETECT RUNTIME ENVIRONMENT (Fixes image loss when compiled via PyInstaller)
 if getattr(sys, 'frozen', False):
-    # Running inside a compiled binary environment
     BASE_DIR = os.path.dirname(sys.executable)
 else:
-    # Running as a raw local python script
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CACHE_DIR = os.path.join(BASE_DIR, "image_cache")
 DATA_PATH = os.path.join(BASE_DIR, DATA_FILE)
 
-# Ensure data structures exist in the runtime workspace
 if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
 
-# PASTE YOUR WORKING ZYTE API KEY HERE
 ZYTE_API_KEY = "4f8503c475894371ab356e15558c65d9"
 
 TIER_COLORS = {
@@ -48,16 +43,21 @@ TIERS_ORDER = ["S", "A", "B", "C", "D", "F"]
 
 
 class TierListViewer:
-    def __init__(self, root):
+    # --- ACCEPT AN OPTIONAL PROFILE PARAMETER ON INIT ---
+    def __init__(self, root, selected_profile=None):
         self.root = root
-        self.root.title("🏆 Visual Wrapped Tier List Board")
+        self.selected_profile = selected_profile
+        
+        if self.selected_profile:
+            self.root.title(f"🏆 {self.selected_profile}'s Tier List Board")
+        else:
+            self.root.title("🏆 Visual Wrapped Tier List Board")
+            
         self.root.geometry("1100x800")
         self.root.configure(bg="#1a1a1a")
 
         self.context_menu = tk.Menu(self.root, tearoff=0, bg="#2a2a2a", fg="white", activebackground="#007acc")
         self.selected_game_to_delete = None
-        
-        # CRITICAL CACHE: Anchors references explicitly to protect images from Garbage Collection
         self.image_references = {}
 
         # --- Top Control Bar ---
@@ -76,11 +76,11 @@ class TierListViewer:
         )
         self.search_entry.pack(side="left", padx=5)
 
-        self.btn_refresh = tk.Button(
-            self.control_frame, text="🔄 Clear Layout & Re-Fetch", font=("Arial", 10, "bold"),
-            bg="#007acc", fg="white", relief="flat", command=self.load_and_draw, padx=12
-        )
-        self.btn_refresh.pack(side="right")
+        #self.btn_refresh = tk.Button(
+        #    self.control_frame, text="🔄 Clear Layout & Re-Fetch", font=("Arial", 10, "bold"),
+        #    bg="#007acc", fg="white", relief="flat", command=self.load_and_draw, padx=12
+        #)
+        #self.btn_refresh.pack(side="right")
 
         # --- Main Layout Frames ---
         self.canvas_frame = tk.Frame(self.root, bg="#121212")
@@ -106,37 +106,48 @@ class TierListViewer:
         self.log_debug("SYSTEM: Initialization Complete. Standing by to draw cached assets...")
 
         self.games_data = []
-        self.load_and_draw()
+        # Pass profile details over to engine trigger
+        self.load_and_draw(target_username=self.selected_profile)
 
     def log_debug(self, message):
-        """Appends system operational strings into the scrolling console frame in real-time."""
         self.log_console.insert(tk.END, f"{message}\n")
         self.log_console.see(tk.END)
         self.root.update_idletasks()
 
-    def load_and_draw(self):
+    def load_and_draw(self, target_username=None):
         """Fetches data from the remote PostgreSQL database via API."""
-        self.log_debug("🌐 [NETWORK] Fetching game data from database...")
-        
-        # This calls your api_client.py logic
-        self.games_data = api_client.fetch_games_from_db()
+        if target_username:
+            self.log_debug(f"🌐 [NETWORK] Fetching public profile data for user: {target_username}")
+            try:
+                encoded_user = urllib.parse.quote(target_username)
+                response = requests.get(f"{api_client.BASE_URL}/get_user_games/{encoded_user}", timeout=5)
+                if response.status_code == 200:
+                    self.games_data = response.json()
+                else:
+                    self.games_data = []
+            except Exception as e:
+                self.log_debug(f"❌ Error downloading profile data: {e}")
+                self.games_data = []
+        else:
+            self.log_debug("🌐 [NETWORK] Fetching game data for logged-in session user...")
+            self.games_data = api_client.fetch_games_from_db()
         
         if not self.games_data:
             self.canvas.delete("all")
+            display_msg = f"No profile dataset entries found for user '{target_username}'." if target_username else "No games found in database.\nAdd new entries via the Calculator."
             self.canvas.create_text(
-                500, 200, text="No games found in database.\nAdd new entries via the Calculator.",
-                fill="#888888", font=("Arial", 13, "italic")
+                500, 200, text=display_msg,
+                fill="#888888", font=("Arial", 13, "italic"), justify="center"
             )
             return
 
         self.log_debug(f"✅ [SUCCESS] Loaded {len(self.games_data)} game entries.")
         
-        # Fire structured API image fetcher loop
+        # Process and download images via premium API
         self.download_missing_images_via_zyte()
         self.draw_tier_list()
 
     def download_missing_images_via_zyte(self):
-        """Fetches premium high-res imagery using DuckDuckGo's structured API via Zyte."""
         for game in self.games_data:
             game_name = game.get("game_name", "").strip()
             if not game_name:
@@ -155,37 +166,26 @@ class TierListViewer:
                 encoded_query = urllib.parse.quote(game_name)
                 target_url = f"https://api.duckduckgo.com/?q={encoded_query}&format=json&no_redirect=1"
                 
-                self.log_debug(f"   -> Dispatching HTTP POST to api.zyte.com/v1/extract")
-
                 api_response = requests.post(
                     "https://api.zyte.com/v1/extract",
                     auth=(ZYTE_API_KEY, ""),
-                    json={
-                        "url": target_url,
-                        "httpResponseBody": True,
-                    },
+                    json={"url": target_url, "httpResponseBody": True},
                     timeout=12
                 )
                 
                 if api_response.status_code == 200:
                     raw_payload = api_response.json().get("httpResponseBody", "")
                     json_data = json.loads(b64decode(raw_payload).decode('utf-8', errors='ignore'))
-                    
                     direct_img_url = json_data.get("Image", "")
                     
                     if direct_img_url:
                         if direct_img_url.startswith("/"):
                             direct_img_url = "https://duckduckgo.com" + direct_img_url
                             
-                        self.log_debug(f"   🎯 Found Official Image Asset Link: {direct_img_url}")
-
                         img_response = requests.post(
                             "https://api.zyte.com/v1/extract",
                             auth=(ZYTE_API_KEY, ""),
-                            json={
-                                "url": direct_img_url,
-                                "httpResponseBody": True,
-                            },
+                            json={"url": direct_img_url, "httpResponseBody": True},
                             timeout=10
                         )
 
@@ -193,14 +193,12 @@ class TierListViewer:
                             img_bytes = b64decode(img_response.json()["httpResponseBody"])
                             with open(final_path, "wb") as f:
                                 f.write(img_bytes)
-                            self.log_debug(f"   ✅ [SUCCESS] High-res asset cached completely!")
                             image_saved = True
 
             except Exception as e:
                 self.log_debug(f"   💥 [EXCEPTION ENCOUNTERED]: {e}")
 
             if not image_saved:
-                self.log_debug(f"   🎨 [FALLBACK TILE] Generating local geometric badge for '{game_name}'")
                 try:
                     fallback_img = Image.new('RGB', (100, 100), color='#2c3e50')
                     draw = ImageDraw.Draw(fallback_img)
@@ -210,10 +208,8 @@ class TierListViewer:
                     pass
 
     def get_game_image(self, game_name):
-        """Loads local cached images from disk and processes them cleanly into Tkinter formats."""
         safe_name = re.sub(r'[\\/*?:"<>|]', "", game_name).strip()
         img_path = os.path.join(CACHE_DIR, f"{safe_name}.png")
-
         if os.path.exists(img_path):
             try:
                 img = Image.open(img_path)
@@ -224,6 +220,10 @@ class TierListViewer:
         return None
 
     def show_context_menu(self, event, game_name):
+        # --- PREVENT OTHER USERS FROM DELETING SOMEONE ELSE'S DATA ---
+        if self.selected_profile:
+            return 
+            
         self.selected_game_to_delete = game_name
         self.context_menu.delete(0, tk.END)
         self.context_menu.add_command(label=f"❌ Delete '{game_name}'", command=self.confirm_and_delete_game)
@@ -235,26 +235,23 @@ class TierListViewer:
             
         confirm = messagebox.askyesno("Confirm Deletion", f"Permanently remove '{self.selected_game_to_delete}' from DB?")
         if confirm:
-            # You need to implement this in api_client.py
             success, message = api_client.delete_game_from_db(self.selected_game_to_delete)
-            
             if success:
                 self.log_debug(f"🗑️ [DB TRANSACTION] Purged: '{self.selected_game_to_delete}'")
-                self.load_and_draw() # Re-fetch fresh data
+                self.load_and_draw(target_username=self.selected_profile) 
             else:
                 messagebox.showerror("Delete Error", message)
         
         self.selected_game_to_delete = None
 
     def draw_tier_list(self):
-        """Draws layout grids wrapping columns into new sub-rows and anchoring image memory maps perfectly."""
         self.canvas.delete("all")
-        self.image_references.clear()  # Safely wipe past render anchors to avoid bloating memory
+        self.image_references.clear()
         filter_keyword = self.search_var.get().strip().lower()
 
-        # Group items by tier
         tier_groups = {tier: [] for tier in TIERS_ORDER}
         for game in self.games_data:
+            # Check dictionary keys based on standard API schema format mapping
             name = game.get("game_name", "Unknown Game")
             tier = game.get("tier", "F")
             if filter_keyword and filter_keyword not in name.lower():
@@ -262,7 +259,6 @@ class TierListViewer:
             if tier in tier_groups:
                 tier_groups[tier].append(game)
 
-        # UI Positioning Properties
         current_y = 10
         row_min_height = 70
         max_width = 1040
@@ -270,12 +266,10 @@ class TierListViewer:
 
         for tier in TIERS_ORDER:
             games_in_tier = tier_groups[tier]
-            
             x_offset = 85
             tier_start_y = current_y
             
             for game in games_in_tier:
-                # Detect boundary overflow -> Wrap down into an extra sub-row layout line
                 if x_offset + card_width > max_width - 10:
                     x_offset = 85
                     current_y += row_min_height
@@ -283,32 +277,19 @@ class TierListViewer:
                 display_name = game["game_name"]
                 calc_score = game.get("calculated_score", 0.0)
                 
-                # Fetch processed PhotoImage format image
                 tk_img = self.get_game_image(display_name)
-                
                 tag_id = f"game_{display_name.replace(' ', '_')}"
                 
-                # Card Base Plate
                 self.canvas.create_rectangle(
                     x_offset, current_y + 5, x_offset + card_width, current_y + row_min_height - 5,
                     fill="#262626", outline="#444444", width=1, tags=tag_id
                 )
 
-                # --- FIX FOR PYINSTALLER BINARY IMAGE LOSS ---
                 if tk_img:
-                    # Form a unique, layout-dependent key slot name to shield it from Garbage Collection
                     img_key = f"img_{tier}_{display_name}_{x_offset}_{current_y}"
                     self.image_references[img_key] = tk_img
-                    
-                    # Draw the image asset safely to canvas layer coordinates
-                    self.canvas.create_image(
-                        x_offset + 5, current_y + 7, 
-                        anchor="nw", 
-                        image=tk_img, 
-                        tags=tag_id
-                    )
+                    self.canvas.create_image(x_offset + 5, current_y + 7, anchor="nw", image=tk_img, tags=tag_id)
 
-                # Info Labels Text Formatting
                 short_name = display_name if len(display_name) <= 14 else display_name[:11] + "..."
                 self.canvas.create_text(
                     x_offset + 60, current_y + 18, text=short_name, fill="#ffffff", font=("Arial", 9, "bold"), anchor="nw", tags=tag_id
@@ -317,25 +298,23 @@ class TierListViewer:
                     x_offset + 60, current_y + 36, text=f"Score: {calc_score}", fill="#aaaaaa", font=("Arial", 8), anchor="nw", tags=tag_id
                 )
 
-                # Right-click / Trackpad context menu configuration bindings
-                self.canvas.tag_bind(tag_id, "<Button-3>", lambda e, name=display_name: self.show_context_menu(e, name))
-                self.canvas.tag_bind(tag_id, "<Button-2>", lambda e, name=display_name: self.show_context_menu(e, name))
+                # Right click binds (Only active if viewing your own tier list)
+                if not self.selected_profile:
+                    self.canvas.tag_bind(tag_id, "<Button-3>", lambda e, name=display_name: self.show_context_menu(e, name))
+                    self.canvas.tag_bind(tag_id, "<Button-2>", lambda e, name=display_name: self.show_context_menu(e, name))
 
                 x_offset += card_width + 10
 
             tier_end_y = current_y + row_min_height - 5
             
-            # Draw Left Side Category Badges
             self.canvas.create_rectangle(0, tier_start_y, 70, tier_end_y, fill=TIER_COLORS[tier], outline="#333333")
             self.canvas.create_text(35, (tier_start_y + tier_end_y) // 2, text=tier, font=("Arial", 22, "bold"), fill="#111111")
             
-            # Draw Tray Container Boxes
             self.canvas.create_rectangle(70, tier_start_y, max_width, tier_end_y, fill="", outline="#252525")
             self.canvas.tag_lower(self.canvas.create_rectangle(70, tier_start_y, max_width, tier_end_y, fill="#151515", outline=""))
 
             current_y = tier_end_y + 10
 
-        # Adjust scrollbar dimensions to adapt dynamically to the total expanded height
         self.canvas.config(scrollregion=(0, 0, max_width, current_y + 20))
 
 

@@ -122,3 +122,19 @@ def search_games():
         "avg_score": round(s.avg_score, 2), 
         "count": s.review_count
     } for s in stats]), 200
+
+@main_bp.route('/get_user_games/<username>', methods=['GET'])
+def get_user_games(username):
+    # Find user by username
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+        
+    games = Game.query.filter_by(user_id=user.id).all()
+    output = [{
+        "game_name": g.game_name,
+        "criteria_scores": g.criteria_data,
+        "calculated_score": g.calculated_score,
+        "tier": g.tier
+    } for g in games]
+    return jsonify(output), 200

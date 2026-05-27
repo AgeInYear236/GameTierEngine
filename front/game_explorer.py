@@ -8,6 +8,7 @@ class GameExplorer:
         self.window = tk.Toplevel(parent)
         self.window.title("Global Game Library")
         self.window.geometry("400x500")
+        self.window.attributes("-topmost", True)
 
         tk.Label(self.window, text="Search for a game:").pack(pady=5)
         self.entry = tk.Entry(self.window)

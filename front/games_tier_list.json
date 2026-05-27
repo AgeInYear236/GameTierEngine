@@ -310,5 +310,18 @@
         "personal_score": 5,
         "calculated_score": 84.5,
         "tier": "A"
+    },
+    {
+        "game_name": "Need For Speed: Most Wanted (2005)",
+        "criteria_scores": {
+            "Gameplay": 10.0,
+            "Graphics": 10.0,
+            "Storyline": 10.0,
+            "Music": 10.0,
+            "Hardware": 10.0
+        },
+        "personal_score": 2,
+        "calculated_score": 120.0,
+        "tier": "C"
     }
 ]

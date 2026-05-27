@@ -1,8 +1,9 @@
 import requests
 import urllib
 
-BASE_URL = "http://127.0.0.1:5000"
+BASE_URL = "http://2.27.44.69:5456"
 TOKEN = None
+CURRENT_USER = None
 
 def register(username, password):
     try:
@@ -14,15 +15,17 @@ def register(username, password):
         return False, str(e)
 
 def login(username, password):
-    global TOKEN
-    try:
-        response = requests.post(f"{BASE_URL}/login", json={"username": username, "password": password})
-        if response.status_code == 200:
-            TOKEN = response.json().get("token")
-            return True, "Login successful"
-        return False, response.json().get("msg", "Login failed")
-    except Exception as e:
-        return False, str(e)
+    global TOKEN, CURRENT_USER
+    response = requests.post(f"{BASE_URL}/login", json={"username": username, "password": password})
+    
+    print(f"DEBUG: Login status code: {response.status_code}") # Look for this!
+    
+    if response.status_code == 200:
+        TOKEN = response.json().get("token")
+        CURRENT_USER = username
+        print(f"DEBUG: Username set to: {CURRENT_USER}") # Look for this!
+        return True, "Login successful"
+    return False, "Login failed"
 
 def save_game_to_db(game_data):
     global TOKEN
@@ -65,3 +68,11 @@ def delete_game_from_db(game_name):
         return False, f"Server returned {response.status_code}: {response.text}"
     except Exception as e:
         return False, str(e)
+
+def get_current_user():
+    return CURRENT_USER
+
+def logout():
+    global TOKEN, CURRENT_USER
+    TOKEN = None
+    CURRENT_USER = None

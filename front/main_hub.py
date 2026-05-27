@@ -6,9 +6,9 @@ from tkinter import messagebox
 import api_client
 from login_manager import AuthWindow
 
-# CONFIGURATION: Point directly to the companion EXEs that will sit in the same folder
-CALCULATOR_EXE = "game_calculator.py"
-VIEWER_EXE = "tier_list_viewer.py"
+# CONFIGURATION: Указываем напрямую файлы сценариев Python
+CALCULATOR_SCRIPT = "game_calculator.py"
+VIEWER_SCRIPT = "tier_list_viewer.py"
 
 
 class GameHubLauncher:
@@ -18,12 +18,20 @@ class GameHubLauncher:
         self.root.geometry("500x500")
         self.root.configure(bg="#141414")
         self.root.resizable(True, True)
+        if os.path.exists("/app_icon.ico"):
+            self.root.iconbitmap("/app_icon.ico")
 
         # Header
         self.header_frame = tk.Frame(self.root, bg="#1e1e1e", pady=20)
         self.header_frame.pack(fill="x")
         tk.Label(self.header_frame, text="GAME RANKING ENGINE", font=("Arial", 16, "bold"), bg="#1e1e1e", fg="#00ffcc").pack()
         tk.Label(self.header_frame, text="Central Management Suite", font=("Arial", 10, "italic"), bg="#1e1e1e", fg="#888888").pack(pady=(2, 0))
+
+        self.lbl_user_status = tk.Label(
+            self.root, text="Not logged in", font=("Arial", 10, "bold"), 
+            bg="#1a1a1a", fg="#888888"
+        )
+        self.lbl_user_status.pack(anchor="nw", padx=10, pady=5)
 
         # Buttons Container
         self.button_container = tk.Frame(self.root, bg="#141414", pady=30)
@@ -49,24 +57,35 @@ class GameHubLauncher:
         self.lbl_status = tk.Label(self.status_bar, text="Ready to launch subsystems.", font=("Arial", 9), bg="#1e1e1e", fg="#aaaaaa")
         self.lbl_status.pack(side="left")
 
-        # Inside your GameHubLauncher class __init__:
+        # Buttons
         self.btn_auth = tk.Button(
-        self.button_container, text="👤 Login / Register Account", font=("Arial", 10),
+            self.button_container, text="👤 Login / Register Account", font=("Arial", 10),
             bg="#007f22", fg="white", command=self.open_auth
         )
         self.btn_auth.pack(fill="x", pady=(0, 20))
 
         self.btn_users = tk.Button(
-        self.button_container, text="👥 View All Users", font=("Arial", 12, "bold"),
+            self.button_container, text="👥 View All Users", font=("Arial", 12, "bold"),
             bg="#2b2b2b", fg="white", command=self.open_user_directory
         )
         self.btn_users.pack(fill="x", pady=10)
 
         self.btn_explore = tk.Button(
-        self.button_container, text="🔍 Explore Games", font=("Arial", 12),
+            self.button_container, text="🔍 Explore Games", font=("Arial", 12),
             bg="#4a4a4a", fg="white", command=self.open_explorer
         )
         self.btn_explore.pack(fill="x", pady=10)
+
+        self.check_login_status()
+
+    def check_login_status(self):
+        user = api_client.get_current_user()
+        if user:
+            self.lbl_user_status.config(
+                text=f"Logged in as: {user}", 
+                fg="#00ffcc"
+            )
+        self.root.after(1000, self.check_login_status)
 
     def open_user_directory(self):
         from user_directory import UserDirectory
@@ -79,52 +98,48 @@ class GameHubLauncher:
     def open_auth(self):
         AuthWindow(self.root, lambda: self.lbl_status.config(text="✅ Authenticated.", fg="#00ffcc"))
 
-    def launch_exe(self, exe_name, description):
-        """Launches a compiled companion executable sitting right next to this file."""
-        # Detect the exact folder where this launcher EXE is currently sitting
-        base_path = os.path.dirname(sys.argv[0]) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
-        target_exe_path = os.path.join(base_path, exe_name)
+    def launch_script(self, script_name, description):
+        """Запускает дочерний скрипт .py в отдельном процессе Python, передавая токен авторизации."""
+        # Находим папку, где лежит ТЕКУЩИЙ файл лаунчера
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        target_script_path = os.path.join(base_path, script_name)
 
-        # If running raw in your IDE/Code Editor, look for the .py fallback instead
-        if not getattr(sys, 'frozen', False):
-            py_fallback = exe_name.replace(".exe", ".py")
-            target_exe_path = os.path.join(base_path, py_fallback)
-
-        if not os.path.exists(target_exe_path):
-            messagebox.showerror("Launcher Error", f"Could not locate subsystem module:\n{exe_name}\n\nExpected at: {target_exe_path}")
+        # Проверяем, существует ли файл скрипта вообще
+        if not os.path.exists(target_script_path):
+            messagebox.showerror(
+                "Launcher Error", 
+                f"Не удалось найти файл подсистемы:\n{script_name}\n\nОжидался путь: {target_script_path}"
+            )
             return
 
-        self.lbl_status.config(text=f"🚀 Launching {description}...", fg="#00ffcc")
+        self.lbl_status.config(text=f"🚀 Запуск {description}...", fg="#00ffcc")
         self.root.update_idletasks()
 
         token_arg = api_client.TOKEN if api_client.TOKEN else "None"
 
         try:
-            # Open the target executable (or raw script fallback) as a separate Windows process
-            if getattr(sys, 'frozen', False):
-                subprocess.Popen([target_exe_path, token_arg])
-            else:
-                subprocess.Popen([sys.executable, target_exe_path, token_arg])
+            # ЧИСТЫЙ ЗАПУСК ЧЕРЕЗ ТЕКУЩИЙ ИНТЕРПРЕТАТОР PYTHON:
+            # Выполняет команду вида: python path/to/script.py <token>
+            subprocess.Popen([sys.executable, target_script_path, token_arg])
                 
-            self.lbl_status.config(text=f"✅ {description} opened.", fg="#aaaaaa")
+            self.lbl_status.config(text=f"✅ {description} успешно запущен.", fg="#aaaaaa")
         except Exception as e:
-            messagebox.showerror("Execution Fault", f"Failed to initialize process window:\n{e}")
+            messagebox.showerror("Execution Fault", f"Ошибка инициализации процесса:\n{e}")
 
-    def launch_with_auth(self, exe_name, description):
-        """Helper to ensure login before launching any EXE."""
+    def launch_with_auth(self, script_name, description):
+        """Проверяет токен перед запуском скрипта."""
         if api_client.TOKEN is None:
-            # If not logged in, open the login window first
-            # The callback 'lambda' ensures we launch the target ONLY after success
-            LoginWindow(self.root, lambda: self.launch_exe(exe_name, description))
+            # Если не авторизован, сначала показываем окно логина
+            AuthWindow(self.root, lambda: self.launch_script(script_name, description))
         else:
-            # Already logged in, launch immediately
-            self.launch_exe(exe_name, description)
+            # Если уже залогинен — запускаем скрипт сразу
+            self.launch_script(script_name, description)
 
     def launch_calculator(self):
-        self.launch_with_auth(CALCULATOR_EXE, "Game Calculator Menu")
+        self.launch_with_auth(CALCULATOR_SCRIPT, "Game Calculator Menu")
 
     def launch_viewer(self):
-        self.launch_with_auth(VIEWER_EXE, "Visual Tier List Board")
+        self.launch_with_auth(VIEWER_SCRIPT, "Visual Tier List Board")
 
 
 if __name__ == "__main__":
