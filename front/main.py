@@ -319,56 +319,78 @@ class TierListViewerWindow:
         self.draw_tier_list()
 
     def download_missing_images_via_zyte(self):
-        for game in self.games_data:
-            game_name = game.get("game_name", "").strip()
-            if not game_name: continue
+        # Ensure cache directory exists before starting loop 
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
 
-            safe_name = re.sub(r'[\\/*?:"<>|]', "", game_name)
+        for game in self.games_data:
+            raw_game_name = game.get("game_name", "").strip()
+            if not raw_game_name: continue
+
+            # Fix common acronyms so Steam's search engine understands them
+            game_name = raw_game_name
+            if game_name.upper() == "GTA V" or game_name.upper() == "GTA 5":
+                game_name = "Grand Theft Auto V"
+            elif "GTA" in game_name.upper():
+                game_name = game_name.upper().replace("GTA", "Grand Theft Auto")
+
+            # Clean string for file system safety 
+            safe_name = re.sub(r'[\\/*?:"<>|]', "", raw_game_name)
             final_path = os.path.join(CACHE_DIR, f"{safe_name}.png")
 
-            if os.path.exists(final_path): continue
+            if os.path.exists(final_path): continue 
 
-            self.log_debug(f"🔍 [API LOGO FETCH] Requesting high-res asset for: '{game_name}'")
+            self.log_debug(f"🔍 [API LOGO FETCH] Requesting high-res asset for: '{raw_game_name}'") 
             image_saved = False
 
             try:
-                encoded_query = urllib.parse.quote(game_name)
-                target_url = f"https://api.duckduckgo.com/?q={encoded_query}&format=json&no_redirect=1"
+                # Step 1: Query Steam Store Search (Direct, lightweight API request bypassing Zyte)
+                encoded_query = urllib.parse.quote(game_name) 
+                steam_search_url = f"https://store.steampowered.com/api/storesearch/?term={encoded_query}&l=english&cc=US"
                 
-                api_response = requests.post(
-                    "https://api.zyte.com/v1/extract", auth=(ZYTE_API_KEY, ""),
-                    json={"url": target_url, "httpResponseBody": True}, timeout=12
-                )
+                response = requests.get(steam_search_url, timeout=8)
                 
-                if api_response.status_code == 200:
-                    raw_payload = api_response.json().get("httpResponseBody", "")
-                    json_data = json.loads(b64decode(raw_payload).decode('utf-8', errors='ignore'))
-                    direct_img_url = json_data.get("Image", "")
+                if response.status_code == 200:
+                    search_data = response.json()
+                    items = search_data.get("items", [])
                     
-                    if direct_img_url:
-                        if direct_img_url.startswith("/"):
-                            direct_img_url = "https://duckduckgo.com" + direct_img_url
-                            
-                        img_response = requests.post(
-                            "https://api.zyte.com/v1/extract", auth=(ZYTE_API_KEY, ""),
-                            json={"url": direct_img_url, "httpResponseBody": True}, timeout=10
-                        )
+                    if items:
+                        # Grab the top-ranked match from Steam matching the query string
+                        best_match = items[0]
+                        app_id = best_match.get("id")
+                        matched_title = best_match.get("name")
+                        self.log_debug(f"   🎯 Match Found: {matched_title} (AppID: {app_id})")
+                        
+                        # Construct URL for official high-res landscape banner
+                        direct_img_url = f"https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/{app_id}/header.jpg"
+                        
+                        # Step 2: Direct download from Steam CDN (Reliable, fast, bypasses Zyte issues)
+                        img_response = requests.get(direct_img_url, timeout=10)
 
-                        if img_response.status_code == 200:
-                            img_bytes = b64decode(img_response.json()["httpResponseBody"])
-                            with open(final_path, "wb") as f: f.write(img_bytes)
+                        if img_response.status_code == 200 and img_response.content:
+                            with open(final_path, "wb") as f: 
+                                f.write(img_response.content) 
                             image_saved = True
+                            self.log_debug(f"   ✅ Image downloaded successfully!")
+                    else:
+                        self.log_debug(f"   ⚠️ No matches found on Steam for '{game_name}'")
 
             except Exception as e:
                 self.log_debug(f"   💥 [EXCEPTION ENCOUNTERED]: {e}")
 
+            # Step 3: Fallback Canvas Generation (Runs if search yields 0 items or a network error occurs) [cite: 38]
             if not image_saved:
                 try:
-                    fallback_img = Image.new('RGB', (100, 100), color='#2c3e50')
-                    draw = ImageDraw.Draw(fallback_img)
-                    draw.text((50, 50), safe_name[0].upper() if safe_name else "?", fill="#00ffcc", anchor="mm", font_size=40)
-                    fallback_img.save(final_path, "PNG")
-                except Exception: pass
+                    self.log_debug(f"   🎨 Generating fallback placeholder for '{raw_game_name}'")
+                    # Using 460x215 dimensions to perfectly mirror a real Steam landscape banner's aspect ratio
+                    fallback_img = Image.new('RGB', (460, 215), color='#2c3e50')
+                    draw = ImageDraw.Draw(fallback_img) 
+                    
+                    letter = safe_name[0].upper() if safe_name else "?" 
+                    draw.text((230, 107), letter, fill="#00ffcc", anchor="mm", font_size=60)
+                    
+                    fallback_img.save(final_path, "PNG") 
+                except Exception: pass 
 
     def get_game_image(self, game_name):
         safe_name = re.sub(r'[\\/*?:"<>|]', "", game_name).strip()
