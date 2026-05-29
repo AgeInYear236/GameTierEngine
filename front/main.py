@@ -12,6 +12,11 @@ import api_client
 from login_manager import AuthWindow
 from PIL import Image, ImageTk, ImageDraw
 
+# НАСТРОЙКИ
+USER = "AgeInYear236"
+REPO = "GameTierEngine"
+CURRENT_VERSION = "v1.0.1"  # Текущая версия (меняйте при каждом новом билде)
+
 # --- Инициализация токена (если передан) ---
 if len(sys.argv) > 1:
     passed_token = sys.argv[1]
@@ -58,7 +63,7 @@ TIERS_ORDER = ["S", "A", "B", "C", "D", "F"]
 
 
 # =========================================================================
-# 1. СТРУКТУРА КАЛЬКУЛЯТОРА (Переведена из глобального скрипта в Класс)
+# 1. СТРУКТУРА КАЛЬКУЛЯТОРА
 # =========================================================================
 class GameCalculatorWindow:
     def __init__(self, parent):
@@ -232,7 +237,7 @@ class GameCalculatorWindow:
 
 
 # =========================================================================
-# 2. СТРУКТУРА ПРОСМОТРЩИКА ТИР-ЛИСТОВ (Переведена в Класс Toplevel)
+# 2. СТРУКТУРА ПРОСМОТРЩИКА ТИР-ЛИСТОВ
 # =========================================================================
 class TierListViewerWindow:
     def __init__(self, parent, selected_profile=None):
@@ -319,7 +324,6 @@ class TierListViewerWindow:
         self.draw_tier_list()
 
     def download_missing_images_via_zyte(self):
-        # Ensure cache directory exists before starting loop 
         if not os.path.exists(CACHE_DIR):
             os.makedirs(CACHE_DIR)
 
@@ -327,14 +331,12 @@ class TierListViewerWindow:
             raw_game_name = game.get("game_name", "").strip()
             if not raw_game_name: continue
 
-            # Fix common acronyms so Steam's search engine understands them
             game_name = raw_game_name
             if game_name.upper() == "GTA V" or game_name.upper() == "GTA 5":
                 game_name = "Grand Theft Auto V"
             elif "GTA" in game_name.upper():
                 game_name = game_name.upper().replace("GTA", "Grand Theft Auto")
 
-            # Clean string for file system safety 
             safe_name = re.sub(r'[\\/*?:"<>|]', "", raw_game_name)
             final_path = os.path.join(CACHE_DIR, f"{safe_name}.png")
 
@@ -344,10 +346,8 @@ class TierListViewerWindow:
             image_saved = False
 
             try:
-                # Step 1: Query Steam Store Search (Direct, lightweight API request bypassing Zyte)
                 encoded_query = urllib.parse.quote(game_name) 
                 steam_search_url = f"https://store.steampowered.com/api/storesearch/?term={encoded_query}&l=english&cc=US"
-                
                 response = requests.get(steam_search_url, timeout=8)
                 
                 if response.status_code == 200:
@@ -355,16 +355,12 @@ class TierListViewerWindow:
                     items = search_data.get("items", [])
                     
                     if items:
-                        # Grab the top-ranked match from Steam matching the query string
                         best_match = items[0]
                         app_id = best_match.get("id")
                         matched_title = best_match.get("name")
                         self.log_debug(f"   🎯 Match Found: {matched_title} (AppID: {app_id})")
                         
-                        # Construct URL for official high-res landscape banner
                         direct_img_url = f"https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/{app_id}/header.jpg"
-                        
-                        # Step 2: Direct download from Steam CDN (Reliable, fast, bypasses Zyte issues)
                         img_response = requests.get(direct_img_url, timeout=10)
 
                         if img_response.status_code == 200 and img_response.content:
@@ -378,17 +374,13 @@ class TierListViewerWindow:
             except Exception as e:
                 self.log_debug(f"   💥 [EXCEPTION ENCOUNTERED]: {e}")
 
-            # Step 3: Fallback Canvas Generation (Runs if search yields 0 items or a network error occurs) [cite: 38]
             if not image_saved:
                 try:
                     self.log_debug(f"   🎨 Generating fallback placeholder for '{raw_game_name}'")
-                    # Using 460x215 dimensions to perfectly mirror a real Steam landscape banner's aspect ratio
                     fallback_img = Image.new('RGB', (460, 215), color='#2c3e50')
                     draw = ImageDraw.Draw(fallback_img) 
-                    
                     letter = safe_name[0].upper() if safe_name else "?" 
                     draw.text((230, 107), letter, fill="#00ffcc", anchor="mm", font_size=60)
-                    
                     fallback_img.save(final_path, "PNG") 
                 except Exception: pass 
 
@@ -492,7 +484,7 @@ class GameHubLauncher:
     def __init__(self, root):
         self.root = root
         self.root.title("🎮 Game Evaluation & Tier List Hub")
-        self.root.geometry("500x500")
+        self.root.geometry("500x620") # Слегка увеличили высоту под блок обновлений
         self.root.configure(bg="#141414")
         self.root.resizable(True, True)
         if os.path.exists("/app_icon.ico"):
@@ -508,37 +500,60 @@ class GameHubLauncher:
         self.lbl_user_status.pack(anchor="nw", padx=10, pady=5)
 
         # Buttons Container
-        self.button_container = tk.Frame(self.root, bg="#141414", pady=30)
+        self.button_container = tk.Frame(self.root, bg="#141414", pady=15)
         self.button_container.pack(fill="both", expand=True, padx=40)
 
         self.btn_calc = tk.Button(
             self.button_container, text="➕ Rank & Log New Game Entry", font=("Arial", 12, "bold"),
             bg="#2b2b2b", fg="white", activebackground="#007acc", activeforeground="white",
-            bd=1, relief="solid", pady=15, command=self.launch_calculator
+            bd=1, relief="solid", pady=10, command=self.launch_calculator
         )
-        self.btn_calc.pack(fill="x", pady=10)
+        self.btn_calc.pack(fill="x", pady=5)
 
         self.btn_viewer = tk.Button(
             self.button_container, text="🏆 Open Tier List Board", font=("Arial", 12, "bold"),
             bg="#2b2b2b", fg="white", activebackground="#27ae60", activeforeground="white",
-            bd=1, relief="solid", pady=15, command=self.launch_viewer
+            bd=1, relief="solid", pady=10, command=self.launch_viewer
         )
-        self.btn_viewer.pack(fill="x", pady=10)
+        self.btn_viewer.pack(fill="x", pady=5)
+
+        self.btn_auth = tk.Button(self.button_container, text="👤 Login / Register Account", font=("Arial", 10), bg="#00bd10", fg="white", command=self.open_auth)
+        self.btn_auth.pack(fill="x", pady=5)
+
+        self.btn_users = tk.Button(self.button_container, text="👥 View All Users", font=("Arial", 12, "bold"), bg="#2b2b2b", fg="white", command=self.open_user_directory)
+        self.btn_users.pack(fill="x", pady=5)
+
+        self.btn_explore = tk.Button(self.button_container, text="🔍 Explore Games", font=("Arial", 12), bg="#4a4a4a", fg="white", command=self.open_explorer)
+        self.btn_explore.pack(fill="x", pady=5)
+
+        # --- UPDATE SECTION ---
+        # Теперь все элементы аккуратно упакованы внутрь button_container лаунчера
+        self.version_label = tk.Label(
+            self.button_container, text=f"Application Version: {CURRENT_VERSION}", font=("Arial", 10), bg="#141414", fg="#aaaaaa"
+        )
+        self.version_label.pack(pady=(15, 0))
+
+        self.update_button = tk.Button(
+            self.button_container,
+            text="Check for Updates",
+            command=lambda: GameUpdater.check_updates(self.root, self.status_label),
+            font=("Arial", 10, "bold"),
+            bg="#238636",
+            fg="white",
+            padx=10,
+            pady=5,
+            bd=0
+        )
+        self.update_button.pack(pady=5)
+
+        self.status_label = tk.Label(self.button_container, text="", font=("Arial", 9), fg="gray", bg="#141414")
+        self.status_label.pack(pady=5)
 
         # Status Bar
         self.status_bar = tk.Frame(self.root, bg="#1e1e1e", pady=8, padx=10)
         self.status_bar.pack(fill="x", side="bottom")
         self.lbl_status = tk.Label(self.status_bar, text="Ready to launch subsystems.", font=("Arial", 9), bg="#1e1e1e", fg="#aaaaaa")
         self.lbl_status.pack(side="left")
-
-        self.btn_auth = tk.Button(self.button_container, text="👤 Login / Register Account", font=("Arial", 10), bg="#007f22", fg="white", command=self.open_auth)
-        self.btn_auth.pack(fill="x", pady=(0, 20))
-
-        self.btn_users = tk.Button(self.button_container, text="👥 View All Users", font=("Arial", 12, "bold"), bg="#2b2b2b", fg="white", command=self.open_user_directory)
-        self.btn_users.pack(fill="x", pady=10)
-
-        self.btn_explore = tk.Button(self.button_container, text="🔍 Explore Games", font=("Arial", 12), bg="#4a4a4a", fg="white", command=self.open_explorer)
-        self.btn_explore.pack(fill="x", pady=10)
 
         self.check_login_status()
 
@@ -559,7 +574,6 @@ class GameHubLauncher:
     def open_auth(self):
         AuthWindow(self.root, lambda: self.lbl_status.config(text="✅ Authenticated.", fg="#00ffcc"))
 
-    # --- НОВАЯ ВНУТРЕННЯЯ ЛОГИКА ВЗАИМОДЕЙСТВИЯ (БЕЗ EXE И СУБПРОЦЕССОВ) ---
     def launch_calculator(self):
         if api_client.TOKEN is None:
             AuthWindow(self.root, lambda: GameCalculatorWindow(self.root))
@@ -574,6 +588,108 @@ class GameHubLauncher:
             TierListViewerWindow(self.root)
         self.lbl_status.config(text="✅ Tier List Board opened.", fg="#aaaaaa")
 
+
+# =========================================================================
+# 4. СТРУКТУРА ОБНОВЛЕНИЙ (ИСПРАВЛЕНА СВЯЗЬ GUI И ОШИБКА PYINSTALLER DLL)
+# =========================================================================
+class GameUpdater:
+    @staticmethod
+    def check_updates(root_win, status_lbl):
+        url = f"https://api.github.com/repos/{USER}/{REPO}/releases/latest"
+        status_lbl.config(text="Checking for updates...", fg="yellow")
+        root_win.update()
+
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                release_data = response.json()
+                latest_version = release_data["tag_name"]
+
+                if latest_version != CURRENT_VERSION:
+                    status_lbl.config(text="Update available!", fg="#00ffcc")
+                    answer = messagebox.askyesno(
+                        "Update Available",
+                        f"A new version ({latest_version}) is available.\n"
+                        f"Current version: {CURRENT_VERSION}\n\n"
+                        f"Do you want to download and install it now?",
+                    )
+
+                    if answer:
+                        download_url = None
+                        for asset in release_data["assets"]:
+                            if asset["name"].endswith(".exe"):
+                                download_url = asset["browser_download_url"]
+                                break
+
+                        if download_url:
+                            GameUpdater.download_and_install(download_url, root_win, status_lbl)
+                        else:
+                            status_lbl.config(text="No exe asset found", fg="red")
+                            messagebox.showerror(
+                                "Error", "No .exe asset found in the latest GitHub release."
+                            )
+                    else:
+                        status_lbl.config(text="Update canceled", fg="gray")
+                else:
+                    status_lbl.config(text="App is up to date", fg="green")
+                    messagebox.showinfo(
+                        "Up to Date", "You are already using the latest version."
+                    )
+            else:
+                status_lbl.config(text="Check failed", fg="red")
+                messagebox.showerror(
+                    "Error", "Failed to fetch release data from GitHub."
+                )
+
+        except Exception as e:
+            status_lbl.config(text="Error occurred", fg="red")
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
+    @staticmethod
+    def download_and_install(url, root_win, status_lbl):
+        try:
+            current_exe = os.path.abspath(sys.executable)
+            exe_dir = os.path.dirname(current_exe)
+            temp_exe = os.path.join(exe_dir, "update_temp.exe")
+
+            status_lbl.config(text="Downloading update...", fg="yellow")
+            root_win.update()
+
+            with requests.get(url, stream=True) as r:
+                r.raise_for_status()
+                with open(temp_exe, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+            status_lbl.config(text="Installing update...", fg="yellow")
+            root_win.update()
+
+            exe_name = os.path.basename(current_exe)
+
+            # НОВАЯ КОМАНДА:
+            # 1. timeout /t 1 -> Ждем 1 секунду, чтобы команда запустилась в фоне
+            # 2. taskkill -> Жестко убиваем старый процесс по имени (это предотвратит вызов деструкторов PyInstaller и уберет ошибку DLL)
+            # 3. timeout /t 2 -> Ждем 2 секунды, чтобы ОС полностью освободила файл
+            # 4. del и move -> Безопасно меняем файлы
+            # 5. start -> Запускаем новую версию
+            cmd_command = (
+                f'timeout /t 1 && '
+                f'taskkill /f /im "{exe_name}" && '
+                f'timeout /t 2 && '
+                f'del /f /q "{current_exe}" && '
+                f'move "{temp_exe}" "{current_exe}" && '
+                f'start "" "{current_exe}"'
+            )
+
+            subprocess.Popen(
+                cmd_command, shell=True, creationflags=subprocess.CREATE_NO_WINDOW
+            )
+
+            root_win.withdraw()
+
+        except Exception as e:
+            status_lbl.config(text="Update failed", fg="red")
+            messagebox.showerror("Error", f"Failed to install update: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
